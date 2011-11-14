@@ -282,7 +282,7 @@ deactivate_timer(#state{timer = Pid, active = true} = State) ->
     receive
 	deactivated -> ok
     end,
-    State#state{timeout = false};
+    State#state{active = false};
 deactivate_timer(State) ->
     State.
 
