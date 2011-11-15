@@ -1478,7 +1478,7 @@ source_encoding(Opts) ->
         [Encoding] ->
             Encoding;
         [] ->
-            latin1
+            default_encoding
         % _ -> only one encoding option allowed. fail if more passed.
     end.
 

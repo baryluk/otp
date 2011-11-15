@@ -22,7 +22,7 @@
 
 -export([open/2,open/3,open/4,open/5,close/1,format_error/1]).
 -export([scan_erl_form/1,parse_erl_form/1,macro_defs/1]).
--export([parse_file/1, parse_file/3]).
+-export([parse_file/1, parse_file/3, parse_file/4]).
 -export([interpret_file_attribute/1]).
 -export([normalize_typed_record_fields/1,restore_typed_record_fields/1]).
 
@@ -30,6 +30,7 @@
 
 -type macros() :: [{atom(), term()}].
 -type epp_handle() :: pid().
+-type encodings() :: unicode:encoding() | 'detect_unicode_encoding' | 'default_encoding'.
 
 %% Epp state record.
 -record(epp, {file,				%Current file
@@ -61,6 +62,7 @@
 %% parse_erl_form(Epp)
 %% parse_file(Epp)
 %% parse_file(FileName, IncludePath, PreDefMacros)
+%% parse_file(FileName, IncludePath, PreDefMacros, Encoding)
 %% macro_defs(Epp)
 
 -spec open(FileName, IncludePath) ->
@@ -82,14 +84,14 @@ open(Name, Path) ->
       ErrorDescriptor :: term().
 
 open(Name, Path, Pdm) ->
-    open(Name, Path, Pdm, latin1).
+    open(Name, Path, Pdm, default_encoding).
 
 -spec open(FileName, IncludePath, PredefMacros, Encoding) ->
 	{'ok', Epp} | {'error', ErrorDescriptor} when
       FileName :: file:name(),
       IncludePath :: [DirectoryName :: file:name()],
       PredefMacros :: macros(),
-      Encoding :: unicode:encoding(),
+      Encoding :: encodings(),
       Epp :: epp_handle(),
       ErrorDescriptor :: term().
 
@@ -178,6 +180,8 @@ format_error({'NYI',What}) ->
     io_lib:format("not yet implemented '~s'", [What]);
 format_error(E) -> file:format_error(E).
 
+%% parse_file(FileName, IncludePath, [PreDefMacro], Encoding) ->
+%%	{ok,[Form]} | {error,OpenError}
 %% parse_file(FileName, IncludePath, [PreDefMacro]) ->
 %%	{ok,[Form]} | {error,OpenError}
 
@@ -192,7 +196,25 @@ format_error(E) -> file:format_error(E).
       OpenError :: file:posix() | badarg | system_limit.
 
 parse_file(Ifile, Path, Predefs) ->
-    case open(Ifile, Path, Predefs) of
+    parse_file_1(open(Ifile, Path, Predefs)).
+
+-spec parse_file(FileName, IncludePath, PredefMacros, Encoding) ->
+                {'ok', [Form]} | {error, OpenError} when
+      FileName :: file:name(),
+      IncludePath :: [DirectoryName :: file:name()],
+      Form :: erl_parse:abstract_form() | {'error', ErrorInfo} | {'eof',Line},
+      PredefMacros :: macros(),
+      Encoding :: encodings(),
+      Line :: erl_scan:line(),
+      ErrorInfo :: erl_scan:error_info() | erl_parse:error_info(),
+      OpenError :: file:posix() | badarg | system_limit.
+
+
+parse_file(Ifile, Path, Predefs, Encoding) ->
+    parse_file_1(open(Ifile, Path, Predefs, Encoding)).
+
+parse_file_1(OpenResult) ->
+    case OpenResult of
 	{ok,Epp} ->
 	    Forms = parse_file(Epp),
 	    close(Epp),
@@ -261,10 +283,16 @@ restore_typed_record_fields([Form|Forms]) ->
 
 %% server(StarterPid, FileName, Path, PreDefMacros, Encoding)
 
-server(Pid, Name, Path, Pdm, Encoding) ->
+server(Pid, Name, Path, Pdm, Encoding0) ->
     process_flag(trap_exit, true),
-    case file:open(Name, [read, {encoding, Encoding}]) of
+    EncodingOpts = case Encoding0 of
+        default_encoding -> []; % [{encoding, latin1}];
+        detect_unicode_encoding -> []; % TODO: use BOM detection
+        OtherEncoding -> [{encoding, OtherEncoding}]
+    end,
+    case file:open(Name, [read | EncodingOpts]) of
 	{ok,File} ->
+            % Perform BOM detection before
             Location = 1,
 	    init_server(Pid, Name, File, Location, Path, Pdm, false);
 	{error,E} ->

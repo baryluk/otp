@@ -25,7 +25,8 @@
 	 variable_1/1, otp_4870/1, otp_4871/1, otp_5362/1,
          pmod/1, not_circular/1, skip_header/1, otp_6277/1, otp_7702/1,
          otp_8130/1, overload_mac/1, otp_8388/1, otp_8470/1, otp_8503/1,
-         otp_8562/1, otp_8665/1, otp_8911/1]).
+         otp_8562/1, otp_8665/1, otp_8911/1,
+         utf8_1/1]).
 
 -export([epp_parse_erl_form/2]).
 
@@ -67,11 +68,12 @@ all() ->
      {group, variable}, otp_4870, otp_4871, otp_5362, pmod,
      not_circular, skip_header, otp_6277, otp_7702, otp_8130,
      overload_mac, otp_8388, otp_8470, otp_8503, otp_8562,
-     otp_8665, otp_8911, utf8_1].
+     otp_8665, otp_8911, {group, encoding}].
 
 groups() -> 
     [{upcase_mac, [], [upcase_mac_1, upcase_mac_2]},
-     {variable, [], [variable_1]}].
+     {variable, [], [variable_1]},
+     {encoding, [], [utf8_1]}].
 
 init_per_suite(Config) ->
     Config.
