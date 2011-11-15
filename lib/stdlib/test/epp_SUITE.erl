@@ -67,7 +67,7 @@ all() ->
      {group, variable}, otp_4870, otp_4871, otp_5362, pmod,
      not_circular, skip_header, otp_6277, otp_7702, otp_8130,
      overload_mac, otp_8388, otp_8470, otp_8503, otp_8562,
-     otp_8665, otp_8911].
+     otp_8665, otp_8911, utf8_1].
 
 groups() -> 
     [{upcase_mac, [], [upcase_mac_1, upcase_mac_2]},
@@ -117,8 +117,15 @@ include_local(Config) when is_list(Config) ->
 %%% after 4 seconds if the epp server doesn't respond. If we use the
 %%% regular epp:parse_file, the test case will time out, and then epp
 %%% server will go on growing until we dump core.
+epp_parse_file(File, Inc, Predef, Encoding) ->
+    {ok, Epp} = epp:open(File, Inc, Predef, Encoding),
+    epp_parse_file_1(Epp).
+
 epp_parse_file(File, Inc, Predef) ->
     {ok, Epp} = epp:open(File, Inc, Predef),
+    epp_parse_file_1(Epp).
+
+epp_parse_file_1(Epp) ->
     List = collect_epp_forms(Epp),
     epp:close(Epp),
     {ok, List}.
@@ -1275,6 +1282,17 @@ otp_8665(Config) when is_list(Config) ->
            {errors,[{{1,54},epp,premature_end}],[]}}
          ],
     ?line [] = compile(Config, Cs),
+    ok.
+
+utf8_1(doc) ->
+    ["Unicode (UTF-8) support in source files."];
+utf8_1(suite) ->
+    [];
+utf8_1(Config) when is_list(Config) ->
+    ?line File = filename:join(?config(data_dir, Config), "utf8_1.erl"),
+    ?line {ok, List} = epp_parse_file(File, [], [], utf8),
+    ?line false = lists:keysearch(error, 1, List),
+    ?line check_errors(List),
     ok.
 
 check(Config, Tests) ->

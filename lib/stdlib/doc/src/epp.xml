@@ -51,6 +51,7 @@
     <func>
       <name name="open" arity="2"/>
       <name name="open" arity="3"/>
+      <name name="open" arity="4"/>
       <fsummary>Open a file for preprocessing</fsummary>
       <desc>
         <p>Opens a file for preprocessing.</p>

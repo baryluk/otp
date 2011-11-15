@@ -20,7 +20,7 @@
 
 %% An Erlang code preprocessor.
 
--export([open/2,open/3,open/5,close/1,format_error/1]).
+-export([open/2,open/3,open/4,open/5,close/1,format_error/1]).
 -export([scan_erl_form/1,parse_erl_form/1,macro_defs/1]).
 -export([parse_file/1, parse_file/3]).
 -export([interpret_file_attribute/1]).
@@ -54,6 +54,7 @@
 
 %% open(FileName, IncludePath)
 %% open(FileName, IncludePath, PreDefMacros)
+%% open(FileName, IncludePath, PreDefMacros, Encoding)
 %% open(FileName, IoDevice, StartLocation, IncludePath, PreDefMacros)
 %% close(Epp)
 %% scan_erl_form(Epp)
@@ -81,13 +82,26 @@ open(Name, Path) ->
       ErrorDescriptor :: term().
 
 open(Name, Path, Pdm) ->
+    open(Name, Path, Pdm, latin1).
+
+-spec open(FileName, IncludePath, PredefMacros, Encoding) ->
+	{'ok', Epp} | {'error', ErrorDescriptor} when
+      FileName :: file:name(),
+      IncludePath :: [DirectoryName :: file:name()],
+      PredefMacros :: macros(),
+      Encoding :: unicode:encoding(),
+      Epp :: epp_handle(),
+      ErrorDescriptor :: term().
+
+open(Name, Path, Pdm, Encoding) ->
     Self = self(),
-    Epp = spawn(fun() -> server(Self, Name, Path, Pdm) end),
+    Epp = spawn(fun() -> server(Self, Name, Path, Pdm, Encoding) end),
     epp_request(Epp).
+
 
 open(Name, File, StartLocation, Path, Pdm) ->
     Self = self(),
-    Epp = spawn(fun() -> server(Self, Name, File, StartLocation,Path,Pdm) end),
+    Epp = spawn(fun() -> server(Self, Name, File, StartLocation, Path, Pdm) end),
     epp_request(Epp).
 
 -spec close(Epp) -> 'ok' when
@@ -245,11 +259,11 @@ restore_typed_record_fields([{attribute,La,type,{{record,Record},Fields,[]}}|
 restore_typed_record_fields([Form|Forms]) ->
     [Form|restore_typed_record_fields(Forms)].
 
-%% server(StarterPid, FileName, Path, PreDefMacros)
+%% server(StarterPid, FileName, Path, PreDefMacros, Encoding)
 
-server(Pid, Name, Path, Pdm) ->
+server(Pid, Name, Path, Pdm, Encoding) ->
     process_flag(trap_exit, true),
-    case file:open(Name, [read]) of
+    case file:open(Name, [read, {encoding, Encoding}]) of
 	{ok,File} ->
             Location = 1,
 	    init_server(Pid, Name, File, Location, Path, Pdm, false);

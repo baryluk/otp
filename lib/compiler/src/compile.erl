@@ -761,7 +761,7 @@ parse_module(St) ->
     Opts = St#compile.options,
     Cwd = ".",
     IncludePath = [Cwd, St#compile.dir|inc_paths(Opts)],
-    R =  epp:parse_file(St#compile.ifile, IncludePath, pre_defs(Opts)),
+    R =  epp:parse_file(St#compile.ifile, IncludePath, pre_defs(Opts), source_encoding(Opts)),
     case R of
 	{ok,Forms} ->
 	    {ok,St#compile{code=Forms}};
@@ -1472,6 +1472,15 @@ pre_defs([]) -> [].
 
 inc_paths(Opts) ->
     [ P || {i,P} <- Opts, is_list(P) ].
+
+source_encoding(Opts) ->
+    case [ Encoding || {encoding, Encoding} <- Opts ] of
+        [Encoding] ->
+            Encoding;
+        [] ->
+            latin1
+        % _ -> only one encoding option allowed. fail if more passed.
+    end.
 
 src_listing(Ext, St) ->
     listing(fun (Lf, {_Mod,_Exp,Fs}) -> do_src_listing(Lf, Fs);

@@ -152,6 +152,43 @@
               for details.</p>
           </item>
 
+          <tag><c>{encoding, Encoding}</c></tag>
+          <item>
+            <p>The compiler will parse source file using encoding Encoding,
+            like definied by <c>unicode:encoding()</c> datatype.
+            Encoding options are passed to <c>epp</c> module, and from there
+            to <c>file</c> module which performs actuall conversion.
+            This options is usefull for source code files encoded in UTF-8 (or other from UTF family)
+            having literal strings and literal integers written using $char notation,
+            which contains Unicode characters.
+            Default behaviour is to use <c>latin1</c> encoding.
+            </p>
+            <p><em>Note:</em>
+            This flag is currently
+            only intended to be used with <c>.erl</c> and <c>.hrl</c> files.
+            </p>
+            <p<em>Warning:</em>
+            Using encoding which is different than actual encoding of the compiled
+            file may produce unexpected behaviour.
+            All included files will be read and parsed using same encoding Encoding,
+            which may produce unexpected results, if they are in fact encoded using different encodings.
+            Remember however, that latin1 encoded files (which is default and only supported encoding in previous Erlang releases)
+            with characters codepoints below 127, are also valid and semantically same utf8 encoded files,
+            which essentially makes mixing of latin1 and utf8 files safe, even if encoding is forced to be utf8 in both cases.
+            To guarantee safe inclusion of other files, latin1 encoded files must use only safe subset of latin1,
+            precisly characters included in ASCII charset (becasue both latin1 and utf8 are compatible extensions of 7-bit ASCII encoding).
+            As actuall Erlang code syntax definition only uses characters from ASCII charset (ignoring $char notation, string literals and comments),
+            this limitation is not of practical importance.
+            </p>
+            <p><em>Note:</em>
+            All files on disk will still be written using standard encodings and formats.
+            Strings containing Unicode characters and integers with Unicode
+            characters will be interpreted and written as list of integers
+            and integer respectivly, not quoted string literals or integer literal with $char
+            notation. This can make intermidiate files harder to read.
+            </p>
+          </item>
+
           <tag><c>encrypt_debug_info</c></tag>
           <item>
             <marker id="encrypt_debug_info"></marker>

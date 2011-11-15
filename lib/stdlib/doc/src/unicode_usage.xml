@@ -168,6 +168,22 @@ Eshell V5.7  (abort with ^G)
 <image file="ushell2.gif"><icaption>Unicode characters in allowed and disallowed context</icaption></image>
 </section> 
 <section>
+<title>Source files</title>
+<p>Source code files can be compiled in different encoding by using <c>{encoding, Encoding}</c> option to the <c>compile:file/2</c> function.
+Encoding can also be passed to <c>epp:open/4</c> function when using preprocessor.</p>
+<p>For example <c>compile:file("somemodule.erl", [{encoding, utf8}])</c> will read,
+parse and compile file somemodule.erl using UTF-8 encoding.
+This allows using actuall UTF-8 characters in string literals and character constants.
+String binaries with literal Unicode are not supported yet, and will fail at runtime.
+Using extended encoding is not available for atoms or any other language constructs yet.
+They can however be used in comments.
+</p>
+<p>All included files by compiler and <c>epp</c> (Erlang preprocessor) will be read using same encoding.
+To prevent unexpected results, save all files under same encoding
+or in case of mixing with latin1, use utf8, makeing sure latin1 files use only latin1 codepoints
+below 127 (a ASCII charset), so they can be safely read as UTF-8 files.</p>
+</section>
+<section>
 <title>Unicode file names</title>
 <p>Most modern operating systems support Unicode file names in some way or another. There are several different ways to do this and Erlang by default treats the different approaches differently:</p>
 <taglist>
